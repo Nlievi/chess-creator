@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teste das animações</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .teste { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .botoes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 720px; }
+    .velocidade { display: flex; align-items: center; gap: 10px; color: var(--suave); }
+    .velocidade input { accent-color: var(--destaque); }
+    .teste a { color: var(--destaque); }
+  </style>
+</head>
+<body>
+  <header class="topo">
+    <h1>Teste das animações</h1>
+    <p class="boas-vindas">Cada botão monta uma posição e faz a captura com o efeito daquela peça. Usa os seus times salvos no menu.</p>
+  </header>
+  <main class="teste">
+    <div class="botoes">
+      <button type="button" data-cena="espada">Espada (peão)</button>
+      <button type="button" data-cena="espadaRainha">Espada (rainha)</button>
+      <button type="button" data-cena="esmagar">Esmagar (torre)</button>
+      <button type="button" data-cena="coice">Coice (cavalo)</button>
+      <button type="button" data-cena="desintegrar">Desintegrar (bispo)</button>
+      <button type="button" data-cena="mate" class="primario">Xeque-mate</button>
+    </div>
+    <label class="velocidade">Velocidade
+      <input type="range" id="velocidade" min="0.1" max="2" step="0.1" value="1">
+      <span id="velocidade-texto">1x</span>
+    </label>
+    <div class="mesa"><div id="tabuleiro"></div></div>
+    <a href="/">Voltar ao jogo</a>
+  </main>
+
+  <script type="module">
+    import { Tabuleiro } from '/js/tabuleiro.js';
+    import { Partida } from '/js/partida.js';
+    import { montarTime } from '/js/pecas.js';
+    import { configurarAnimacoes, pularAnimacoes, EFEITOS_PADRAO, EFEITOS } from '/js/animacoes.js';
+    import { destravarAudio } from '/js/sons.js';
+
+    const cenas = {
+      espada: { fen: '4k3/8/8/3n4/4P3/8/8/4K3 w - - 0 1', jogada: { from: 'e4', to: 'd5' } },
+      espadaRainha: { fen: '4k3/8/8/8/6r1/8/8/3QK3 w - - 0 1', jogada: { from: 'd1', to: 'g4' } },
+      esmagar: { fen: '4k3/8/b7/8/8/8/8/R3K3 w - - 0 1', jogada: { from: 'a1', to: 'a6' } },
+      coice: { fen: '4k3/8/8/8/3r4/5N2/8/4K3 w - - 0 1', jogada: { from: 'f3', to: 'd4' } },
+      desintegrar: { fen: '4k3/8/8/6q1/8/8/8/2B1K3 w - - 0 1', jogada: { from: 'c1', to: 'g5' } },
+      mate: { fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4', jogada: { from: 'h5', to: 'f7' } },
+    };
+
+    let prefs = {};
+    try { prefs = JSON.parse(localStorage.getItem('xadrez-ia')) || {}; } catch { /* sem armazenamento */ }
+    const times = {
+      w: montarTime(prefs.temas?.w || 'classico', 'w', prefs.fotos?.w || {}),
+      b: montarTime(prefs.temas?.b || 'realeza', 'b', prefs.fotos?.b || {}),
+    };
+
+    const efeitos = { ...EFEITOS_PADRAO };
+    try {
+      const config = await (await fetch('/api/config', { cache: 'no-store' })).json();
+      for (const [tipo, efeito] of Object.entries(config.efeitos || {})) if (EFEITOS.includes(efeito)) efeitos[tipo] = efeito;
+    } catch { /* usa os efeitos padrão */ }
+
+    const tab = new Tabuleiro(document.getElementById('tabuleiro'));
+    tab.aoClicarLivre = pularAnimacoes;
+    const nova = () => new Partida({ tabuleiro: tab, times, efeitos });
+    nova().preparar(cenas.espada.fen);
+
+    let ocupado = false;
+    for (const botao of document.querySelectorAll('[data-cena]')) {
+      botao.addEventListener('click', async () => {
+        if (ocupado) return;
+        ocupado = true;
+        destravarAudio();
+        const cena = cenas[botao.dataset.cena];
+        const partida = nova();
+        partida.preparar(cena.fen);
+        await new Promise((r) => setTimeout(r, 350));
+        await partida.aplicar(cena.jogada);
+        ocupado = false;
+      });
+    }
+
+    const velocidade = document.getElementById('velocidade');
+    velocidade.addEventListener('input', () => {
+      configurarAnimacoes({ velocidade: Number(velocidade.value) });
+      document.getElementById('velocidade-texto').textContent = `${velocidade.value}x`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "xadrez-ia",
+  "version": "1.0.0",
+  "description": "Xadrez personalizado com IA - trabalho de Infraestrutura de Servidores (FAG)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.4"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20.12"
+  }
+}

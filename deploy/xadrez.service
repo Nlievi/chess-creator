@@ -1,0 +1,20 @@
+# Serviço systemd do Xadrez IA.
+# Instalar:  sudo cp deploy/xadrez.service /etc/systemd/system/
+#            sudo systemctl daemon-reload && sudo systemctl enable --now xadrez
+# Ver:       systemctl status xadrez   |   journalctl -u xadrez -f
+[Unit]
+Description=Xadrez IA - jogo de xadrez personalizado
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=xadrez
+Group=xadrez
+WorkingDirectory=/opt/xadrez-ia
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

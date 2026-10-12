@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Xadrez IA</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23a9774f'/%3E%3Cpath d='M47 18h6v6h6v6h-6v9h-6v-9h-6v-6h6z M34 52Q27 40 33 34Q42 27 50 36Q58 27 67 34Q73 40 66 52Z M38 80Q43 66 40 54H60Q57 66 62 80Z' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topo">
+    <h1 id="titulo">Xadrez IA</h1>
+    <p id="boas-vindas" class="boas-vindas"></p>
+  </header>
+
+  <p id="aviso" class="aviso" role="alert" hidden></p>
+
+  <main>
+    <section id="tela-inicio" class="tela ativa">
+      <div class="bloco">
+        <h2><span class="num">1</span> Modo de jogo</h2>
+        <div class="modos">
+          <button type="button" class="modo ativo" aria-pressed="true"><strong>Mesmo PC</strong><span>Dois jogadores no mesmo aparelho</span></button>
+          <button type="button" class="modo" disabled><strong>Contra o computador</strong><span>Em breve</span></button>
+          <button type="button" class="modo" disabled><strong>Online</strong><span>Em breve</span></button>
+        </div>
+      </div>
+
+      <div class="bloco">
+        <h2><span class="num">2</span> Monte os times</h2>
+        <div class="times">
+          <div class="time" data-cor="w">
+            <div class="time-topo">
+              <span class="selo selo-w" title="Brancas"></span>
+              <input class="nome" maxlength="20" aria-label="Nome de quem joga com as brancas">
+              <span class="lado">Brancas</span>
+            </div>
+            <p class="rotulo">Tema das peças</p>
+            <div class="temas"></div>
+            <p class="rotulo">Peças com foto</p>
+            <div class="fotos-resumo"></div>
+            <button type="button" class="btn-foto">Colocar fotos nas peças (IA)</button>
+          </div>
+          <div class="time" data-cor="b">
+            <div class="time-topo">
+              <span class="selo selo-b" title="Pretas"></span>
+              <input class="nome" maxlength="20" aria-label="Nome de quem joga com as pretas">
+              <span class="lado">Pretas</span>
+            </div>
+            <p class="rotulo">Tema das peças</p>
+            <div class="temas"></div>
+            <p class="rotulo">Peças com foto</p>
+            <div class="fotos-resumo"></div>
+            <button type="button" class="btn-foto">Colocar fotos nas peças (IA)</button>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" id="btn-jogar" class="primario grande">Jogar</button>
+    </section>
+
+    <section id="tela-jogo" class="tela">
+      <div class="mesa">
+        <div class="jogador" id="jogador-cima"></div>
+        <div id="tabuleiro"></div>
+        <div class="jogador" id="jogador-baixo"></div>
+      </div>
+      <aside class="painel">
+        <p id="status" class="status" aria-live="polite"></p>
+        <div class="acoes">
+          <button type="button" id="btn-girar">Girar tabuleiro</button>
+          <button type="button" id="btn-reiniciar">Reiniciar</button>
+          <button type="button" id="btn-menu">Menu</button>
+        </div>
+        <div class="opcoes">
+          <label><input type="checkbox" id="opt-animacoes"> Animações</label>
+          <label><input type="checkbox" id="opt-som"> Som</label>
+        </div>
+        <p class="dica">Toque no tabuleiro durante uma animação para pular.</p>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="dlg-fim">
+    <h2 id="fim-titulo"></h2>
+    <p id="fim-texto"></p>
+    <div class="acoes">
+      <button type="button" id="fim-novamente" class="primario">Jogar de novo</button>
+      <button type="button" id="fim-menu">Menu</button>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-promocao">
+    <p>Promover o peão para:</p>
+    <div class="promo-opcoes"></div>
+  </dialog>
+
+  <dialog id="dlg-fotos"></dialog>
+
+  <footer class="rodape"><span id="servidor-info">Conectando ao servidor…</span> · <a href="/teste-animacoes.html">Testar animações</a></footer>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

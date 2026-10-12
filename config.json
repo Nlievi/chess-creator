@@ -1,0 +1,16 @@
+{
+  "titulo": "Xadrez IA",
+  "mensagemBoasVindas": "Monte seu time, coloque sua cara nas peças e boa partida!",
+  "mensagemVitoria": "Xeque-mate! {vencedor} venceu!",
+  "corCasaClara": "#efdcb8",
+  "corCasaEscura": "#a9774f",
+  "velocidadeAnimacoes": 1,
+  "efeitos": {
+    "p": "espada",
+    "n": "coice",
+    "b": "desintegrar",
+    "r": "esmagar",
+    "q": "espada",
+    "k": "espada"
+  }
+}
