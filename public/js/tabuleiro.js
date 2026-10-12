@@ -1,7 +1,7 @@
 // Desenha o tabuleiro 8x8 e as peças. Não conhece as regras: quem decide as jogadas é a Partida.
 // Camadas: casas (cliques) -> peças -> efeitos das animações.
 
-import { ehPersonalizada } from './pecas.js';
+import { ehPersonalizada, montarTime } from './pecas.js';
 
 const posicaoCss = (p) => `translate(${p.c * 100}%, ${p.r * 100}%)`;
 
@@ -67,9 +67,17 @@ export class Tabuleiro {
   }
 
   atualizarImagem(el) {
-    const url = this.times?.[el.dataset.cor]?.pecas[el.dataset.tipo];
+    const { cor, tipo } = el.dataset;
+    const time = this.times?.[cor];
+    const url = time?.pecas[tipo];
     if (!url) return;
     const img = el.querySelector('img');
+    // Se a foto não carregar (arquivo apagado no servidor), volta para a peça desenhada do tema
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = montarTime(time.tema, cor).pecas[tipo];
+      el.classList.remove('foto');
+    };
     if (img.getAttribute('src') !== url) img.src = url;
     el.classList.toggle('foto', ehPersonalizada(url));
   }
@@ -135,6 +143,11 @@ export class Tabuleiro {
     this.orientacao = this.orientacao === 'w' ? 'b' : 'w';
     this.desenharCasas();
     for (const [casa, el] of this.pecas) this.posicionar(el, casa);
+  }
+
+  // Deixa a cor indicada embaixo (no online, quem joga de pretas vê o tabuleiro do seu lado)
+  definirOrientacao(cor) {
+    if (this.orientacao !== cor) this.girar();
   }
 
   marcarUltima(de, para) {

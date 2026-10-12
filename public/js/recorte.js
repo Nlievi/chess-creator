@@ -25,13 +25,16 @@ export async function reduzirFoto(arquivo, maximo = 500) {
   const url = URL.createObjectURL(arquivo);
   try {
     const img = await carregarImagem(url);
-    const w = img.naturalWidth;
-    const h = img.naturalHeight;
+    // Foto de celular tem 12 a 48 megapixels: reduz para no máximo 1024 px ANTES de analisar,
+    // senão a análise usa centenas de MB de memória e trava a página
+    const reducao = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * reducao));
+    const h = Math.max(1, Math.round(img.naturalHeight * reducao));
     const base = novoCanvas(w, h);
     const bctx = base.getContext('2d', { willReadFrequently: true });
     bctx.fillStyle = '#fff';
     bctx.fillRect(0, 0, w, h);
-    bctx.drawImage(img, 0, 0);
+    bctx.drawImage(img, 0, 0, w, h);
 
     const dados = bctx.getImageData(0, 0, w, h);
     const fundo = corDoFundo(dados.data, w, h);
@@ -81,21 +84,26 @@ function apagarFundo(d, w, h, tolerancia) {
     d[i * 4 + 3] < 16 ||
     Math.hypot(d[i * 4] - fundo[0], d[i * 4 + 1] - fundo[1], d[i * 4 + 2] - fundo[2]) <= tolerancia;
 
+  // Cada pixel entra na pilha no máximo uma vez (marcado ao entrar): a memória fica limitada ao tamanho da imagem
   const visitado = new Uint8Array(w * h);
-  const pilha = [];
-  for (let x = 0; x < w; x++) pilha.push(x, (h - 1) * w + x);
-  for (let y = 0; y < h; y++) pilha.push(y * w, y * w + w - 1);
-  while (pilha.length) {
-    const i = pilha.pop();
-    if (visitado[i]) continue;
+  const pilha = new Int32Array(w * h);
+  let topo = 0;
+  const empilhar = (i) => {
+    if (visitado[i]) return;
     visitado[i] = 1;
+    pilha[topo++] = i;
+  };
+  for (let x = 0; x < w; x++) { empilhar(x); empilhar((h - 1) * w + x); }
+  for (let y = 0; y < h; y++) { empilhar(y * w); empilhar(y * w + w - 1); }
+  while (topo) {
+    const i = pilha[--topo];
     if (!ehFundo(i)) continue;
     d[i * 4 + 3] = 0;
     const x = i % w;
-    if (x > 0) pilha.push(i - 1);
-    if (x < w - 1) pilha.push(i + 1);
-    if (i >= w) pilha.push(i - w);
-    if (i < w * (h - 1)) pilha.push(i + w);
+    if (x > 0) empilhar(i - 1);
+    if (x < w - 1) empilhar(i + 1);
+    if (i >= w) empilhar(i - w);
+    if (i < w * (h - 1)) empilhar(i + w);
   }
 
   // Borda mais suave: pixels encostados no fundo ficam semitransparentes

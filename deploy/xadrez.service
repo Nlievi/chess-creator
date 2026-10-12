@@ -1,7 +1,6 @@
-# Serviço systemd do Xadrez IA.
-# Instalar:  sudo cp deploy/xadrez.service /etc/systemd/system/
-#            sudo systemctl daemon-reload && sudo systemctl enable --now xadrez
-# Ver:       systemctl status xadrez   |   journalctl -u xadrez -f
+# Serviço systemd do Xadrez IA (instalado pelo deploy/instalar.sh).
+# Ver:        systemctl status xadrez   |   journalctl -u xadrez -f
+# Reiniciar:  sudo systemctl restart xadrez   (depois de mudar o .env ou arquivos .js do servidor)
 [Unit]
 Description=Xadrez IA - jogo de xadrez personalizado
 After=network-online.target
@@ -13,6 +12,10 @@ User=xadrez
 Group=xadrez
 WorkingDirectory=/opt/xadrez-ia
 ExecStart=/usr/bin/node server.js
+# Em produção o Express não mostra detalhes internos de erros para o visitante
+Environment=NODE_ENV=production
+# Arquivos criados pelo jogo (peças) ficam editáveis pelo grupo xadrez
+UMask=0002
 Restart=on-failure
 RestartSec=2
 

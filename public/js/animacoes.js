@@ -68,7 +68,15 @@ async function animar(el, quadros, { duracao = 300, easing = 'ease', atraso = 0 
   if (semAnimacao()) return; // quem chamou já aplica o estado final
   const a = el.animate(quadros, { duration: dur(duracao), easing, delay: dur(atraso), fill: 'forwards' });
   ativas.add(a);
-  try { await a.finished; } catch { /* cancelada */ } finally { ativas.delete(a); }
+  // Rede de segurança: se o navegador parar de desenhar (janela coberta, economia de energia), a animação
+  // não termina sozinha e a partida travaria no meio da jogada. Passado o tempo previsto, ela é concluída à força.
+  const limite = setTimeout(() => {
+    try { a.finish(); } catch { /* já terminou */ }
+  }, dur(duracao) + dur(atraso) + 1500);
+  try { await a.finished; } catch { /* cancelada */ } finally {
+    clearTimeout(limite);
+    ativas.delete(a);
+  }
 }
 
 function soltar(el) {

@@ -3,7 +3,7 @@
 // Contrato do controlador: pedirJogada(partida) -> Promise<{ from, to, promotion? }>; opcionais: jogadaFeita(move), cancelar()
 
 import { Chess } from '/vendor/chess.js/chess.js';
-import { animarCaptura, animarDeslize, animarXequeMate, EFEITOS_PADRAO } from './animacoes.js';
+import { animarCaptura, animarDeslize, animarXequeMate, pularAnimacoes, EFEITOS_PADRAO } from './animacoes.js';
 import { sons } from './sons.js';
 
 export class Partida {
@@ -16,6 +16,7 @@ export class Partida {
     this.chess = new Chess();
     this.controladores = null;
     this.ativa = false;
+    this.encerrada = false; // depois de encerrar(), uma jogada que ainda estava animando não mexe em mais nada
   }
 
   preparar(fen) {
@@ -42,6 +43,7 @@ export class Partida {
       }
       if (!this.ativa) return;
       const move = await this.aplicar(jogada);
+      if (this.encerrada) return;
       if (!move) continue; // jogada inválida: pede de novo
       for (const c of new Set(Object.values(controladores))) c.jogadaFeita?.(move, this);
       this.emitirStatus();
@@ -54,6 +56,8 @@ export class Partida {
 
   encerrar() {
     this.ativa = false;
+    this.encerrada = true;
+    pularAnimacoes();
     if (this.controladores) for (const c of new Set(Object.values(this.controladores))) c.cancelar?.();
   }
 
@@ -82,6 +86,7 @@ export class Partida {
       sons.mover();
       await animarDeslize(this.tab, atacante, move.from, move.to);
     }
+    if (this.encerrada) return null;
     this.tab.moverNoMapa(move.from, move.to);
 
     // Roque: a torre também anda
@@ -91,6 +96,7 @@ export class Partida {
       const torre = this.tab.elemento(de);
       this.tab.moverNoMapa(de, para);
       if (torre) await animarDeslize(this.tab, torre, de, para);
+      if (this.encerrada) return null;
     }
 
     this.tab.sincronizar(this.chess.board()); // promoção troca a imagem do peão

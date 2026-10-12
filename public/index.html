@@ -20,10 +20,17 @@
       <div class="bloco">
         <h2><span class="num">1</span> Modo de jogo</h2>
         <div class="modos">
-          <button type="button" class="modo ativo" aria-pressed="true"><strong>Mesmo PC</strong><span>Dois jogadores no mesmo aparelho</span></button>
-          <button type="button" class="modo" disabled><strong>Contra o computador</strong><span>Em breve</span></button>
-          <button type="button" class="modo" disabled><strong>Online</strong><span>Em breve</span></button>
+          <button type="button" class="modo" data-modo="local" aria-pressed="true"><strong>Mesmo PC</strong><span>Dois jogadores no mesmo aparelho</span></button>
+          <button type="button" class="modo" data-modo="bot" aria-pressed="false"><strong>Contra o computador</strong><span>Você contra o Stockfish</span></button>
+          <button type="button" class="modo" data-modo="online" aria-pressed="false"><strong>Online</strong><span>Cada um no seu aparelho, por link</span></button>
         </div>
+        <fieldset class="niveis" hidden>
+          <legend class="rotulo">Nível do computador</legend>
+          <label><input type="radio" name="nivel" value="facil"> Fácil</label>
+          <label><input type="radio" name="nivel" value="medio"> Médio</label>
+          <label><input type="radio" name="nivel" value="dificil"> Difícil</label>
+        </fieldset>
+        <p id="descricao-modo" class="descricao-modo"></p>
       </div>
 
       <div class="bloco">
@@ -53,6 +60,10 @@
             <div class="fotos-resumo"></div>
             <button type="button" class="btn-foto">Colocar fotos nas peças (IA)</button>
           </div>
+        </div>
+        <div class="times-servidor">
+          <button type="button" id="btn-guardar-times">Guardar estes times no servidor</button>
+          <button type="button" id="btn-usar-times" hidden>Usar os times do servidor</button>
         </div>
       </div>
 
@@ -96,6 +107,47 @@
   </dialog>
 
   <dialog id="dlg-fotos"></dialog>
+
+  <dialog id="dlg-online">
+    <h2>Jogar online</h2>
+    <div class="online-escolha">
+      <button type="button" class="primario" data-acao="criar">Criar sala</button>
+      <span class="ou">ou</span>
+      <div class="entrar-sala">
+        <input id="codigo-sala" maxlength="4" autocomplete="off" placeholder="Código" aria-label="Código da sala">
+        <button type="button" data-acao="entrar">Entrar</button>
+      </div>
+    </div>
+    <div class="online-espera" hidden>
+      <p class="rotulo">Código da sala</p>
+      <p class="codigo-grande"></p>
+      <div class="qr" aria-label="QR code com o link da sala"></div>
+      <p class="rotulo">Ou mande este link para o adversário</p>
+      <div class="link-sala">
+        <input id="link-sala" readonly aria-label="Link da sala">
+        <button type="button" data-acao="copiar-link">Copiar</button>
+      </div>
+    </div>
+    <p class="progresso" aria-live="polite"></p>
+    <div class="acoes"><button type="button" data-acao="cancelar">Cancelar</button></div>
+  </dialog>
+
+  <dialog id="dlg-times">
+    <h2>Guardar os times no servidor</h2>
+    <p class="nota">Os times ficam salvos só neste navegador; quando a URL do túnel muda, ou num celular novo, eles somem.
+      Guardados no servidor, qualquer aparelho que abrir o jogo pela primeira vez já começa com eles.</p>
+    <ol class="passos">
+      <li>Copie o trecho abaixo.</li>
+      <li>Pelo SSH, abra <code>nano /opt/xadrez-ia/config.json</code>.</li>
+      <li>Troque o <code>null</code> de <code>"timesPadrao"</code> por este trecho, salve (Ctrl+O, Enter, Ctrl+X) e dê F5.</li>
+    </ol>
+    <textarea readonly rows="10" aria-label="Times em formato JSON"></textarea>
+    <p class="progresso" aria-live="polite"></p>
+    <div class="acoes">
+      <button type="button" class="primario" data-acao="copiar">Copiar</button>
+      <button type="button" data-acao="fechar">Fechar</button>
+    </div>
+  </dialog>
 
   <footer class="rodape"><span id="servidor-info">Conectando ao servidor…</span> · <a href="/teste-animacoes.html">Testar animações</a></footer>
 

@@ -10,6 +10,7 @@
   "dependencies": {
     "chess.js": "^1.4.0",
     "express": "^5.2.1",
+    "qrcode-generator": "^1.5.2",
     "socket.io": "^4.8.4"
   },
   "private": true,

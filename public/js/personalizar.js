@@ -189,9 +189,20 @@ export function abrirPersonalizacao({ cor, tema, fotos, provedor, aoSalvar }) {
 
   // ---------- escolher a imagem ----------
 
+  // Enquanto gera, a janela não fecha (nem pelo Esc): assim ninguém reabre e mistura duas gerações
+  const botaoConcluir = $('button[value=ok]');
+  dlg.oncancel = (e) => {
+    if (gerando) e.preventDefault();
+  };
+
+  // Enter no campo "Quem é?" não pode fechar a janela (o formulário é do tipo "dialog")
+  $('#quem-e').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') e.preventDefault();
+  });
+
   entrada.addEventListener('change', async () => {
     const arquivo = entrada.files[0];
-    if (!arquivo) return;
+    if (!arquivo || gerando) return;
     try {
       foto = await reduzirFoto(arquivo);
       tamanhoFoto = (await carregarImagem(foto)).naturalWidth; // a foto reduzida é sempre quadrada
@@ -210,14 +221,15 @@ export function abrirPersonalizacao({ cor, tema, fotos, provedor, aoSalvar }) {
 
   // ---------- gerar ----------
 
-  // Devolve a URL da peça guardada no servidor
-  async function gerarUmaPeca(tipo, modo, busto) {
+  // Devolve a URL da peça guardada no servidor. Recebe a foto e a descrição do momento em que o
+  // botão foi clicado, para uma troca de imagem no meio não misturar as peças.
+  async function gerarUmaPeca(tipo, modo, { busto, fotoDaVez, descricao }) {
     let png;
     if (modo === 'personagem') {
       png = await montarPersonagem(busto, { tipo, paletaTime: paleta });
     } else {
       try {
-        const { imagem } = await postarJson('/api/gerar', { foto, peca: tipo, tema, cor, descricao: $('#quem-e').value });
+        const { imagem } = await postarJson('/api/gerar', { foto: fotoDaVez, peca: tipo, tema, cor, descricao });
         png = enquadrar(await recortarFundo(imagem));
       } catch (erro) {
         if (erro.bloqueado) throw new Error('a IA bloqueou esta imagem (personagem famoso?). Use o modo Personagem.');
@@ -243,10 +255,16 @@ export function abrirPersonalizacao({ cor, tema, fotos, provedor, aoSalvar }) {
 
     gerando = true;
     botaoGerar.disabled = true;
+    botaoConcluir.disabled = true;
+    entrada.disabled = true;
     const total = fila.length;
     let feitas = 0;
     const erros = [];
-    const busto = modo === 'personagem' ? recortarBusto(figura, caixa) : null;
+    const dadosDaVez = {
+      busto: modo === 'personagem' ? recortarBusto(figura, caixa) : null,
+      fotoDaVez: foto,
+      descricao: $('#quem-e').value,
+    };
     const mostrarProgresso = () => {
       progresso.textContent = modo === 'pessoa' ? `Gerando… ${feitas} de ${total} prontas (cada peça leva alguns segundos)` : 'Gerando…';
     };
@@ -257,7 +275,7 @@ export function abrirPersonalizacao({ cor, tema, fotos, provedor, aoSalvar }) {
       while (fila.length) {
         const tipo = fila.shift();
         try {
-          resultado[tipo] = await gerarUmaPeca(tipo, modo, busto);
+          resultado[tipo] = await gerarUmaPeca(tipo, modo, dadosDaVez);
           salvar();
           desenharGrade();
         } catch (erro) {
@@ -271,6 +289,8 @@ export function abrirPersonalizacao({ cor, tema, fotos, provedor, aoSalvar }) {
 
     gerando = false;
     botaoGerar.disabled = false;
+    botaoConcluir.disabled = false;
+    entrada.disabled = false;
     if (erros.length) {
       progresso.textContent = `Algumas peças falharam. ${erros.join(' ')}`;
       return;
