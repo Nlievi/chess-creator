@@ -98,7 +98,7 @@ ss -lntp | grep -E ":(${PORTA}|22) " || true
 cat <<FIM
 
 Pronto! Próximos passos:
-  1. Tailscale (uma vez):      sudo tailscale up      e abra o link que aparecer
+  1. Tailscale (uma vez):      sudo tailscale up --hostname=xadrez-server   e abra o link (conta pessoal, não a da faculdade)
   2. Publicar na internet:     bash $DESTINO/deploy/tunel.sh     (mostra a URL pública)
   3. Ver o jogo:               systemctl status xadrez     |     journalctl -u xadrez -f
   4. Conta de cada integrante: sudo adduser NOME   e   sudo usermod -aG sudo,xadrez NOME
