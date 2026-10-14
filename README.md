@@ -344,7 +344,7 @@ A URL também aparece na barra de endereço do print do item 11.
 
 **11. Acesso a partir de outra rede:**
 
-Celular na rede móvel (a barra de status não tem o ícone de Wi-Fi, só o sinal da operadora) abrindo `https://capacity-muslim-cotton-balance.trycloudflare.com` em 14/10 às 10:01, enquanto o servidor estava no Wi-Fi da FAG. No mesmo minuto, o log do servidor (`sudo journalctl -u xadrez`) registrou os acessos chegando pelo túnel: `GET / -> 200`, `GET /api/config -> 200`.
+Celular na rede móvel (a barra de status não tem o ícone de Wi-Fi, só o sinal da operadora) abrindo `https://capacity-muslim-cotton-balance.trycloudflare.com` em 14/10 às 10:05, enquanto o servidor estava no Wi-Fi da FAG. No mesmo minuto, o log do servidor (`sudo journalctl -u xadrez`) registrou os acessos chegando pelo túnel: `10:05:03 GET / -> 200`, `10:05:06 GET /api/config -> 200`.
 
 <img src="docs/evidencias/11-celular-4g.jpg" alt="Celular na rede móvel abrindo o CHESS CREATOR pela URL trycloudflare.com" width="300">
 
