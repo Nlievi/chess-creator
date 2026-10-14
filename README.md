@@ -66,7 +66,7 @@ O pacote inclui o `.env` com o token da IA: não compartilhe esse arquivo.
 ```bash
 tar -xzf xadrez-ia.tar.gz
 sudo bash xadrez-ia/deploy/instalar.sh
-sudo tailscale up                       # uma vez: abra o link e entre com a conta do grupo
+sudo tailscale up --hostname=xadrez-server   # uma vez: abra o link e entre com uma conta pessoal (Gmail), não a da faculdade
 bash /opt/xadrez-ia/deploy/tunel.sh     # mostra a URL pública
 ```
 
@@ -139,7 +139,7 @@ Detalhes:
 ## Demonstração: alteração remota por SSH (item 3.6)
 
 ```bash
-ssh usuario@<ip-do-tailscale>
+ssh lievi@xadrez-server          # ou: ssh lievi@100.113.61.105 (IP do Tailscale)
 nano /opt/xadrez-ia/config.json
 ```
 
