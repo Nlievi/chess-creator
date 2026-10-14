@@ -39,7 +39,7 @@ Trabalho bimestral de **Infraestrutura de Servidores** (Prof. Lucca Abbado Neres
 
 | Item | Valor |
 |---|---|
-| Sistema operacional | Ubuntu Server 24.04 LTS _(confirmar)_ |
+| Sistema operacional | **Ubuntu 24.04.5 LTS** rodando no **WSL 2** (kernel `6.18.40.1-microsoft-standard-WSL2`, systemd ativo) num notebook com Windows 10. Hostname `xadrez-server` |
 | Tecnologias | Node.js + Express, Socket.IO, chess.js, Stockfish (WASM), HTML/CSS/JS puro, Web Animations API, Web Audio API, Cloudflare Workers AI, systemd, Cloudflare Tunnel, Tailscale |
 | Comando para iniciar | `sudo systemctl start xadrez` (o serviço executa `node server.js` em `/opt/xadrez-ia`) |
 | Porta | **3000** (variável `PORT` no `.env`) |
@@ -50,7 +50,35 @@ Caminho de uma requisição:
 navegador (celular no 4G) → Cloudflare → cloudflared (serviço xadrez-tunel) → http://localhost:3000 → node server.js (serviço xadrez)
 ```
 
-## Instalação no servidor (Ubuntu Server 24.04)
+## Como o nosso servidor foi montado (WSL 2)
+
+O grupo só tinha um notebook com Windows, então o servidor Linux é um Ubuntu de verdade rodando no WSL 2 (uma máquina virtual leve do Windows, com kernel Linux e systemd próprios). No PowerShell do Windows:
+
+```powershell
+wsl --install -d Ubuntu-24.04
+```
+
+Dentro do Ubuntu, `/etc/wsl.conf` liga o systemd e define o nome da máquina:
+
+```ini
+[boot]
+systemd=true
+[user]
+default=lievi
+[network]
+hostname=xadrez-server
+generateHosts=true
+```
+
+Depois, `sudo bash /mnt/c/Users/lievi/Desktop/xadrez-ia/deploy/instalar.sh` (o mesmo script de um Ubuntu comum, abaixo).
+
+**Detalhes do WSL que mudam o que aparece nos comandos:**
+- `ip -br addr` mostra `eth0` com **172.23.x.x**: é a rede virtual entre o Ubuntu e o Windows. O Windows faz NAT para o Wi-Fi, por isso `ip route` mostra `default via 172.23.96.1` (o Windows), não o roteador. O IP do Wi-Fi fica no Windows (`ipconfig`).
+- `uptime` é o tempo desde que a máquina virtual do Ubuntu ligou, não o do Windows.
+- O WSL desliga o Ubuntu quando nenhum programa `wsl.exe` está aberto, mesmo com os serviços rodando. Por isso existe o **`ligar-servidor-wsl.bat`** (dois cliques antes de apresentar): ele deixa um `wsl.exe` escondido rodando `sleep infinity`, mostra o estado dos serviços e a URL pública.
+- Outro computador da rede local não alcança o IP 172.23.x.x (NAT). O acesso administrativo de fora é pelo **Tailscale** (`tailscale0`, 100.113.61.105).
+
+## Instalação num Ubuntu 24.04 (máquina dedicada ou WSL)
 
 **1. Copiar o projeto do Windows para o servidor** (PowerShell no Windows; troque `usuario` e o IP):
 
@@ -76,7 +104,7 @@ O `deploy/instalar.sh` instala Node.js, cloudflared, Tailscale, tmux e ufw; deix
 
 ```bash
 sudo adduser NOME
-sudo usermod -aG sudo,xadrez NOME
+sudo usermod -aG sudo,xadrez,systemd-journal NOME
 ```
 
 **Atualizar o jogo:** copie o pacote novo, extraia por cima e rode `sudo bash xadrez-ia/deploy/instalar.sh` de novo. Se usarem Git no servidor: `cd /opt/xadrez-ia && git pull && npm ci --omit=dev && sudo systemctl restart xadrez`.
@@ -143,6 +171,8 @@ ssh lievi@xadrez-server          # ou: ssh lievi@100.113.61.105 (IP do Tailscale
 nano /opt/xadrez-ia/config.json
 ```
 
+Isso é feito de outro aparelho com o Tailscale ligado na mesma conta do servidor (notebook de um integrante ou celular com o app Termius). O `config.json` pode ser editado sem `sudo` porque o `lievi` está no grupo `xadrez`.
+
 Exemplos: trocar `"mensagemBoasVindas"`, trocar `"r": "esmagar"` por `"r": "desintegrar"` (a torre passa a desintegrar), ou colar times novos em `"timesPadrao"`. Depois basta dar F5 no celular: o `config.json` é lido a cada acesso. Mudanças no `.env` ou em arquivos `.js` do servidor precisam de `sudo systemctl restart xadrez`.
 
 ## Diagnóstico de problemas (item 3.7)
@@ -151,22 +181,83 @@ A ordem de raciocínio é sempre: **o processo existe? → a porta está em escu
 
 | Sintoma | Como diagnosticar | Como resolver |
 |---|---|---|
-| Processo parado | `systemctl status xadrez` mostra *inactive*; `sudo ss -lntp \| grep 3000` não mostra nada; a URL pública dá erro 502 do Cloudflare | `sudo systemctl start xadrez` |
-| Porta diferente | `sudo ss -lntp` mostra outra porta; conferir `PORT` no `.env` e `journalctl -u xadrez` | Corrigir o `.env` e reiniciar o serviço |
-| Só em 127.0.0.1 | `ss -lntp` mostra `127.0.0.1:3000`. O túnel **continua funcionando** (o cloudflared está na mesma máquina), mas outro PC da rede local ou do Tailscale não acessa | `HOST=0.0.0.0` no `.env` + `sudo systemctl restart xadrez` |
-| cloudflared encerrado | A URL pública para de abrir, mas `curl -i http://127.0.0.1:3000/` funciona; `systemctl status xadrez-tunel` mostra *inactive* | `bash /opt/xadrez-ia/deploy/tunel.sh` (a URL **muda**) |
-| SSH parado | `ssh` dá *connection refused*; no teclado do servidor: `systemctl status ssh` | `sudo systemctl start ssh` |
-| Firewall | `sudo ufw status`; local funciona, de outro PC dá *timeout* (não "refused") | `sudo ufw allow 22/tcp` (SSH) ou `sudo ufw allow 3000/tcp` |
-| `config.json` quebrado | O site mostra o aviso "config.json inválido" com a linha do erro; `journalctl -u xadrez` | Corrigir o JSON (vírgulas e aspas) |
+| Processo parado | `systemctl status xadrez` mostra *inactive*; `sudo ss -lntp \| grep 3000` não mostra nada; `curl` local dá *connection refused*; a URL pública dá erro 502 do Cloudflare e o log do túnel mostra `dial tcp 127.0.0.1:3000: connect: connection refused` | `sudo systemctl start xadrez`. Obs.: se o processo morrer por erro (ou `kill -9`), o systemd o reinicia sozinho em 2 s (`Restart=on-failure`); `systemctl stop` e `kill` normal deixam parado |
+| Porta diferente | `sudo ss -lntp` mostra outra porta (ex.: 3001); a URL pública dá 502 porque o túnel aponta para a 3000; `sudo journalctl -u xadrez -n 5` mostra "rodando em http://0.0.0.0:3001" | Corrigir `PORT` no `.env` (`sudo nano /opt/xadrez-ia/.env`) e `sudo systemctl restart xadrez` |
+| Só em 127.0.0.1 | `sudo ss -lntp` mostra `127.0.0.1:3000` em vez de `0.0.0.0:3000`. O túnel **continua funcionando** (o cloudflared está na mesma máquina e entra pela loopback), mas quem vem pela rede não: no Windows, `curl.exe -m 5 http://172.23.105.100:3000/` falha, e pelo Tailscale `http://100.113.61.105:3000` também (`http://localhost:3000` no Windows continua abrindo, porque o WSL repassa o localhost pela loopback: não serve de teste) | `HOST=0.0.0.0` no `.env` + `sudo systemctl restart xadrez` |
+| cloudflared encerrado | A URL pública para de abrir (erro 530/1033 do Cloudflare), mas `curl -i http://127.0.0.1:3000/` funciona; `systemctl status xadrez-tunel` mostra *inactive* | `bash /opt/xadrez-ia/deploy/tunel.sh` (a URL **muda**) |
+| SSH parado | `ssh` dá *connection refused*; no terminal do próprio servidor (Ubuntu aberto no notebook): `systemctl status ssh` e `sudo ss -lntp \| grep ':22'` | `sudo systemctl start ssh` |
+| Firewall | O ufw está instalado e **desligado**. Com ele ligado e sem regra para a porta: local funciona (`curl 127.0.0.1:3000` → 200, a URL pública continua), mas de fora dá *timeout* (pacote descartado), não *refused*. `sudo ufw status verbose` mostra `deny (incoming)` e as regras | `sudo ufw allow 3000/tcp` ou `sudo ufw allow 22/tcp`; ao terminar a demonstração, `sudo ufw disable` |
+| `config.json` quebrado | O site mostra o aviso "config.json inválido" com a linha do erro; `sudo journalctl -u xadrez` | Corrigir o JSON (vírgulas e aspas) |
 
 **Por que não precisa abrir porta no roteador?** O `cloudflared` faz uma conexão de **saída** até o Cloudflare e as requisições voltam por ela. Nenhuma conexão de entrada chega ao roteador.
 
-## 7–13. Evidências (preencher)
+## 7–13. Evidências
 
-- [ ] 7. Print de `sudo ss -lntp` mostrando a porta 3000
-- [ ] 8. Print do `curl -i http://127.0.0.1:3000/` ou do navegador no servidor
-- [ ] 9. Comando do túnel: `cloudflared tunnel --url http://localhost:3000` (no serviço `xadrez-tunel`)
-- [ ] 10. Print da URL `trycloudflare.com` (saída do `deploy/tunel.sh`)
-- [ ] 11. Print do celular no 4G abrindo o jogo (com a barra de status do celular aparecendo)
-- [ ] 12. Um problema encontrado e como foi diagnosticado: _descrever_ (sugestão: no desenvolvimento, o servidor subia em "IA: simulado" mesmo com o token no `.env`. A linha de inicialização do log mostrou que o `.env` não estava sendo lido; o processo rodava a partir de outra pasta, sem `.env`. Corrigido apontando o serviço para a pasta certa e passando a registrar no log se o `.env` foi carregado.)
-- [ ] 13. Link do repositório: _colar_
+Saídas reais do servidor em 14/10/2026 (os prints ficam em `docs/evidencias/`).
+
+**Identificação da máquina (item 3.1):**
+
+```
+$ hostname
+xadrez-server
+$ whoami
+lievi
+$ ip -br addr
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+eth0             UP             172.23.105.100/20 fe80::215:5dff:fe39:3cca/64
+tailscale0       UNKNOWN        100.113.61.105/32 fd7a:115c:a1e0::de01:3dec/128 fe80::3d92:b034:b24f:87ee/64
+$ ip route
+default via 172.23.96.1 dev eth0 proto kernel onlink
+172.23.96.0/20 dev eth0 proto kernel scope link src 172.23.105.100
+$ uptime
+ 08:24:54 up 34 min,  2 users,  load average: 0.03, 0.08, 0.08
+```
+
+**7. `sudo ss -lntp` mostrando a porta:**
+
+```
+State  Recv-Q Send-Q   Local Address:Port           Peer Address:Port Process
+LISTEN 0      4096     100.113.61.105%tailscale0:51767   0.0.0.0:*    users:(("tailscaled",pid=206,fd=25))
+LISTEN 0      4096     127.0.0.1:20241                   0.0.0.0:*    users:(("cloudflared",pid=211,fd=9))
+LISTEN 0      511      0.0.0.0:3000                      0.0.0.0:*    users:(("node",pid=1788,fd=21))
+LISTEN 0      128      0.0.0.0:22                        0.0.0.0:*    users:(("sshd",pid=231,fd=3))
+LISTEN 0      128      [::]:22                              [::]:*    users:(("sshd",pid=231,fd=4))
+```
+
+O jogo é o `node` na **3000** (em `0.0.0.0`, todas as interfaces) e o SSH é o `sshd` na **22**. A 20241 é a página de métricas do cloudflared (só na loopback) e a 51767 é do Tailscale (só na interface `tailscale0`).
+
+**8. Teste local com `curl`:**
+
+```
+$ curl -i http://127.0.0.1:3000/
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: text/html; charset=utf-8
+Content-Length: 7080
+```
+
+**9. Comando do Cloudflare Tunnel** (é o `ExecStart` do serviço `xadrez-tunel`, ver `deploy/xadrez-tunel.service`):
+
+```
+cloudflared tunnel --no-autoupdate --url http://localhost:3000
+```
+
+**10. URL `trycloudflare.com`** (saída de `bash /opt/xadrez-ia/deploy/tunel.sh`; ela muda sempre que o túnel reinicia):
+
+```
+https://picks-stockings-minimum-jam.trycloudflare.com
+```
+
+Log do túnel: `Registered tunnel connection connIndex=0 ... location=gru02 protocol=quic` (conectado ao Cloudflare de São Paulo).
+
+- [ ] Print do terminal com a URL: `docs/evidencias/10-url.png`
+
+**11. Acesso a partir de outra rede:**
+
+- [ ] Print do celular **no 4G** (Wi-Fi desligado, barra de status aparecendo) abrindo a URL: `docs/evidencias/11-celular-4g.png`
+
+**12. Um problema encontrado e como foi diagnosticado:**
+
+Depois da instalação, minutos após fecharmos o terminal do Ubuntu, a URL pública passou a responder **HTTP 530 (Error 1033)** do Cloudflare: o Cloudflare não encontrava mais o túnel. Seguimos a ordem de diagnóstico começando pelo primeiro passo, "o processo existe?": no Windows, `wsl -l -v` mostrou o Ubuntu como **Stopped**. Ou seja, a máquina Linux inteira estava desligada: sem o processo do jogo, sem a porta 3000 e sem o cloudflared. Causa: o WSL desliga a máquina virtual quando nenhum programa `wsl.exe` está aberto, mesmo com serviços do systemd ativos. Solução: o `ligar-servidor-wsl.bat` mantém um `wsl.exe` escondido rodando `sleep infinity`; com ele, `wsl -l -v` passou a mostrar **Running** e a URL voltou a responder 200.
+
+**13. Repositório:** _colar o link_

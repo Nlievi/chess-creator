@@ -52,14 +52,14 @@ if ! id xadrez >/dev/null 2>&1; then
   useradd --system --shell /usr/sbin/nologin --home-dir "$DESTINO" xadrez
 fi
 if [ -n "$ADMIN" ]; then
-  usermod -aG xadrez "$ADMIN"
+  usermod -aG xadrez,systemd-journal "$ADMIN" # systemd-journal: ler o journalctl sem sudo
 fi
 
 passo "Copiando o jogo para $DESTINO"
 mkdir -p "$DESTINO"
 if [ "$ORIGEM" != "$DESTINO" ]; then
   # Copia tudo menos node_modules e data: as peças já geradas no servidor continuam lá
-  tar -C "$ORIGEM" --exclude=./node_modules --exclude=./data -cf - . | tar -C "$DESTINO" -xf -
+  tar -C "$ORIGEM" --exclude=./node_modules --exclude=./data --exclude=./.claude -cf - . | tar -C "$DESTINO" -xf -
 fi
 if [ ! -f "$DESTINO/.env" ]; then
   cp "$DESTINO/.env.example" "$DESTINO/.env"
@@ -72,7 +72,9 @@ npm ci --omit=dev --no-audit --no-fund
 passo "Permissões"
 mkdir -p "$DESTINO/data/pecas"
 chown -R xadrez:xadrez "$DESTINO"
-chmod -R g+rwX "$DESTINO"
+# Copiados do Windows (/mnt/c), os arquivos viriam todos com 777
+find "$DESTINO" \( -path "$DESTINO/node_modules" -o -path "$DESTINO/.git" \) -prune -o -type f -exec chmod 664 {} +
+chmod -R g+rwX,o-w "$DESTINO"
 find "$DESTINO" -type d -exec chmod g+s {} + # arquivos novos herdam o grupo xadrez
 chmod 640 "$DESTINO/.env"                    # o token da IA não fica visível para outros usuários
 # O repositório pertence ao usuário xadrez; sem isto o Git recusa comandos de outros usuários ("dubious ownership")
