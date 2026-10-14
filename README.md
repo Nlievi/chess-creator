@@ -340,11 +340,13 @@ https://capacity-muslim-cotton-balance.trycloudflare.com
 
 Log do túnel: `Registered tunnel connection connIndex=0 ... location=gru02 protocol=quic` (conectado ao Cloudflare de São Paulo).
 
-- [ ] Print do terminal com a URL: `docs/evidencias/10-url.png`
+A URL também aparece na barra de endereço do print do item 11.
 
 **11. Acesso a partir de outra rede:**
 
-- [ ] Print do celular **no 4G** (Wi-Fi desligado, barra de status aparecendo) abrindo a URL: `docs/evidencias/11-celular-4g.png`
+Celular na rede móvel (a barra de status não tem o ícone de Wi-Fi, só o sinal da operadora) abrindo `https://capacity-muslim-cotton-balance.trycloudflare.com` em 14/10 às 10:01, enquanto o servidor estava no Wi-Fi da FAG. No mesmo minuto, o log do servidor (`sudo journalctl -u xadrez`) registrou os acessos chegando pelo túnel: `GET / -> 200`, `GET /api/config -> 200`.
+
+<img src="docs/evidencias/11-celular-4g.jpg" alt="Celular na rede móvel abrindo o CHESS CREATOR pela URL trycloudflare.com" width="300">
 
 **12. Um problema encontrado e como foi diagnosticado:**
 
