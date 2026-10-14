@@ -50,15 +50,41 @@ Caminho de uma requisição:
 navegador (celular no 4G) → Cloudflare → cloudflared (serviço xadrez-tunel) → http://localhost:3000 → node server.js (serviço xadrez)
 ```
 
-## Como o nosso servidor foi montado (WSL 2)
+## Instalação passo a passo
 
-O grupo só tinha um notebook com Windows, então o servidor Linux é um Ubuntu de verdade rodando no WSL 2 (uma máquina virtual leve do Windows, com kernel Linux e systemd próprios). No PowerShell do Windows:
+O `deploy/instalar.sh` monta o servidor inteiro com um comando. Ele:
+
+1. instala os pacotes do sistema (`curl`, `git`, `tmux`, `ufw`, `openssh-server`);
+2. instala o Node.js (versão LTS), o `cloudflared` e o Tailscale, se ainda não existirem;
+3. deixa o `sshd` escutando direto na porta 22 (desliga o `ssh.socket` do Ubuntu 24.04);
+4. cria o usuário de sistema `xadrez` (que roda o jogo) e o grupo `xadrez` (quem pode editar o jogo) e coloca quem rodou o script nesse grupo;
+5. copia o projeto para `/opt/xadrez-ia` (sem `node_modules` e sem `data`, então as peças já criadas no servidor não se perdem);
+6. cria o `.env` a partir do `.env.example`, se não existir;
+7. instala as dependências (`npm ci`) e acerta as permissões (`.env` fica 640);
+8. instala e habilita os serviços `xadrez` (o jogo) e `xadrez-tunel` (o Cloudflare Tunnel) e reinicia o jogo;
+9. testa com `curl` e `ss` e mostra o resultado.
+
+Precisa de internet e de `sudo`. Leva de 2 a 5 minutos na primeira vez. Pode ser rodado de novo quantas vezes quiser: é assim que se atualiza o jogo.
+
+### Caminho A: notebook com Windows (WSL 2), que é o nosso caso
+
+O grupo só tinha um notebook com Windows, então o servidor Linux é um Ubuntu de verdade rodando no WSL 2 (uma máquina virtual leve do Windows, com kernel Linux e systemd próprios).
+
+**Passo 1. Instalar o Ubuntu.** No PowerShell do Windows:
 
 ```powershell
 wsl --install -d Ubuntu-24.04
 ```
 
-Dentro do Ubuntu, `/etc/wsl.conf` liga o systemd e define o nome da máquina:
+Na primeira vez que o Ubuntu abrir, ele pede um nome de usuário e uma senha (o nosso é `lievi`). Nada aparece enquanto a senha é digitada; é normal. Se a instalação der o erro `0x8000000d`, uma instalação anterior ficou pela metade: `wsl --unregister Ubuntu-24.04` e instale de novo.
+
+**Passo 2. Ligar o systemd e dar nome à máquina.** No terminal do Ubuntu:
+
+```bash
+sudo nano /etc/wsl.conf
+```
+
+Conteúdo do arquivo:
 
 ```ini
 [boot]
@@ -70,7 +96,53 @@ hostname=xadrez-server
 generateHosts=true
 ```
 
-Depois, `sudo bash /mnt/c/Users/lievi/Desktop/xadrez-ia/deploy/instalar.sh` (o mesmo script de um Ubuntu comum, abaixo).
+Salvar (<kbd>Ctrl+O</kbd>, <kbd>Enter</kbd>, <kbd>Ctrl+X</kbd>). Depois, no PowerShell, reiniciar o Ubuntu para valer e abrir de novo:
+
+```powershell
+wsl --shutdown
+wsl -d Ubuntu-24.04
+```
+
+Conferir: `hostname` tem que mostrar `xadrez-server` e `ps -p 1 -o comm=` tem que mostrar `systemd`.
+
+**Passo 3. Rodar o instalador.** O Ubuntu enxerga o disco do Windows em `/mnt/c`, então não precisa copiar nada:
+
+```bash
+cd /mnt/c/Users/lievi/Desktop/xadrez-ia
+sudo bash deploy/instalar.sh
+```
+
+O final tem que mostrar `curl http://127.0.0.1:3000/  ->  HTTP 200` e as linhas do `node` na 3000 e do `sshd` na 22. Se a pasta do Windows tiver um `.env` (com o token da IA), ele é copiado junto; se não tiver, o jogo funciona sem a IA de fotos.
+
+**Passo 4. Senha do SSH.** Se o usuário foi criado sem senha, criar uma (no PowerShell):
+
+```powershell
+wsl -d Ubuntu-24.04 -u root passwd lievi
+```
+
+**Passo 5. Tailscale (uma vez).** No Ubuntu:
+
+```bash
+sudo tailscale up --hostname=xadrez-server
+```
+
+Abrir o link que aparecer e entrar com uma **conta pessoal** (Gmail). A conta da faculdade cai numa rede compartilhada com outros alunos da FAG. Depois, `tailscale ip -4` mostra o IP 100.x do servidor.
+
+**Passo 6. URL pública.**
+
+```bash
+bash /opt/xadrez-ia/deploy/tunel.sh
+```
+
+**Passo 7. Manter ligado.** No Windows, dois cliques em `ligar-servidor-wsl.bat` (na pasta do projeto). Sem ele, o WSL desliga o Ubuntu alguns minutos depois que o último terminal é fechado, e o site cai junto. Deixar o notebook na tomada e sem suspender.
+
+**Passo 8. Conferir tudo:**
+
+```bash
+systemctl is-active xadrez xadrez-tunel ssh     # active, active, active
+sudo ss -lntp | grep -E ':(3000|22) '
+curl -i http://127.0.0.1:3000/
+```
 
 **Detalhes do WSL que mudam o que aparece nos comandos:**
 - `ip -br addr` mostra `eth0` com **172.23.x.x**: é a rede virtual entre o Ubuntu e o Windows. O Windows faz NAT para o Wi-Fi, por isso `ip route` mostra `default via 172.23.96.1` (o Windows), não o roteador. O IP do Wi-Fi fica no Windows (`ipconfig`).
@@ -78,36 +150,52 @@ Depois, `sudo bash /mnt/c/Users/lievi/Desktop/xadrez-ia/deploy/instalar.sh` (o m
 - O WSL desliga o Ubuntu quando nenhum programa `wsl.exe` está aberto, mesmo com os serviços rodando. Por isso existe o **`ligar-servidor-wsl.bat`** (dois cliques antes de apresentar): ele deixa um `wsl.exe` escondido rodando `sleep infinity`, mostra o estado dos serviços e a URL pública.
 - Outro computador da rede local não alcança o IP 172.23.x.x (NAT). O acesso administrativo de fora é pelo **Tailscale** (`tailscale0`, 100.113.61.105).
 
-## Instalação num Ubuntu 24.04 (máquina dedicada ou WSL)
+### Caminho B: computador com Ubuntu 24.04 instalado direto (sem Windows)
 
-**1. Copiar o projeto do Windows para o servidor** (PowerShell no Windows; troque `usuario` e o IP):
+**Passo 1. Levar o projeto para o servidor.** No PowerShell do Windows (troque `usuario` e o IP do servidor):
 
 ```powershell
 tar -czf "$env:USERPROFILE\Desktop\xadrez-ia.tar.gz" --exclude=node_modules --exclude=data --exclude=.claude -C "$env:USERPROFILE\Desktop" xadrez-ia
 scp "$env:USERPROFILE\Desktop\xadrez-ia.tar.gz" usuario@192.168.0.50:~/
 ```
 
-O pacote inclui o `.env` com o token da IA: não compartilhe esse arquivo.
+(ou copiar por pendrive, ou `git clone` do repositório). O pacote inclui o `.env` com o token da IA: não compartilhe esse arquivo.
 
-**2. No servidor:**
+**Passo 2. Dar nome à máquina e rodar o instalador.** No servidor:
 
 ```bash
+sudo hostnamectl set-hostname xadrez-server
 tar -xzf xadrez-ia.tar.gz
-sudo bash xadrez-ia/deploy/instalar.sh
-sudo tailscale up --hostname=xadrez-server   # uma vez: abra o link e entre com uma conta pessoal (Gmail), não a da faculdade
-bash /opt/xadrez-ia/deploy/tunel.sh     # mostra a URL pública
+cd xadrez-ia
+sudo bash deploy/instalar.sh
 ```
 
-O `deploy/instalar.sh` instala Node.js, cloudflared, Tailscale, tmux e ufw; deixa o `sshd` escutando direto na porta 22; cria o usuário de sistema `xadrez` (que roda o jogo) e o grupo `xadrez` (os integrantes, que podem editar); copia o jogo para `/opt/xadrez-ia`; e instala os serviços `xadrez` e `xadrez-tunel`. Rodar de novo atualiza o jogo.
+**Passos 3 a 5.** Iguais aos passos 5, 6 e 8 do caminho A (Tailscale, `tunel.sh` e conferir). O `ligar-servidor-wsl.bat` não é necessário: numa máquina Linux de verdade os serviços sobem sozinhos quando ela liga.
 
-**3. Contas dos integrantes** (cada um entra pelo SSH com a sua):
+### Contas dos integrantes
+
+Para cada um entrar pelo SSH com o próprio usuário:
 
 ```bash
 sudo adduser NOME
 sudo usermod -aG sudo,xadrez,systemd-journal NOME
 ```
 
-**Atualizar o jogo:** copie o pacote novo, extraia por cima e rode `sudo bash xadrez-ia/deploy/instalar.sh` de novo. Se usarem Git no servidor: `cd /opt/xadrez-ia && git pull && npm ci --omit=dev && sudo systemctl restart xadrez`.
+### Atualizar o jogo depois
+
+Rodar o instalador de novo, do mesmo jeito do passo 3 (WSL) ou do passo 2 (Ubuntu). Ele reinicia o jogo, mas **não** reinicia o túnel, então a URL pública continua a mesma.
+
+Atenção: o instalador copia a pasta do Windows **por cima** de `/opt/xadrez-ia`, inclusive o `config.json` e o `.env`. Se alguém mudou o `config.json` pelo SSH no servidor e quer manter, copie de volta antes (`cp /opt/xadrez-ia/config.json /mnt/c/Users/lievi/Desktop/xadrez-ia/`).
+
+### Erros comuns na instalação
+
+| Mensagem | Causa e solução |
+|---|---|
+| `Rode com sudo` | Faltou o `sudo` antes de `bash deploy/instalar.sh` |
+| `System has not been booted with systemd` | O `systemd=true` do `/etc/wsl.conf` não foi aplicado: conferir o arquivo e rodar `wsl --shutdown` no PowerShell |
+| `$'\r': command not found` | O script ficou com quebras de linha do Windows: `sed -i 's/\r$//' deploy/*.sh` e rodar de novo |
+| `curl ... -> HTTP 000` no final | O jogo não subiu: `sudo journalctl -u xadrez -n 30` mostra o motivo (porta ocupada, `.env` ou `config.json` com erro) |
+| `npm ci` ou `apt-get` falham | Sem internet, ou a rede bloqueia: testar `curl -I https://deb.nodesource.com` |
 
 ## Rodar no seu computador (desenvolvimento)
 

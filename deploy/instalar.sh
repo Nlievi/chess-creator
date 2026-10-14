@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Instala (ou atualiza) o CHESS CREATOR num Ubuntu Server 24.04.
-# Rode de dentro da pasta do projeto que foi copiada para o servidor:
-#   sudo bash deploy/instalar.sh
+# Instala (ou atualiza) o CHESS CREATOR num Ubuntu 24.04 (máquina dedicada ou WSL 2).
+# Rode de dentro da pasta do projeto (passo a passo completo no README, "Instalação passo a passo"):
+#   WSL:     cd /mnt/c/Users/lievi/Desktop/xadrez-ia && sudo bash deploy/instalar.sh
+#   Ubuntu:  cd xadrez-ia && sudo bash deploy/instalar.sh
 # Pode rodar de novo quantas vezes quiser: é assim também que se atualiza o jogo.
+# Atenção: a cópia sobrescreve /opt/xadrez-ia/config.json e .env com os da pasta de origem.
 set -euo pipefail
 
 DESTINO=/opt/xadrez-ia
@@ -102,6 +104,7 @@ cat <<FIM
 Pronto! Próximos passos:
   1. Tailscale (uma vez):      sudo tailscale up --hostname=xadrez-server   e abra o link (conta pessoal, não a da faculdade)
   2. Publicar na internet:     bash $DESTINO/deploy/tunel.sh     (mostra a URL pública)
-  3. Ver o jogo:               systemctl status xadrez     |     journalctl -u xadrez -f
-  4. Conta de cada integrante: sudo adduser NOME   e   sudo usermod -aG sudo,xadrez NOME
+  3. Ver o jogo:               systemctl status xadrez     |     sudo journalctl -u xadrez -f
+  4. Conta de cada integrante: sudo adduser NOME   e   sudo usermod -aG sudo,xadrez,systemd-journal NOME
+  5. No WSL: no Windows, dois cliques em ligar-servidor-wsl.bat para o Ubuntu não desligar sozinho
 FIM
