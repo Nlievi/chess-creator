@@ -1,6 +1,10 @@
 // Servidor do Xadrez IA: entrega o site, a configuração, a geração de peças por IA e as salas online.
 const path = require('node:path');
 
+// O Node novo chama a thread principal de "MainThread", e é esse nome que o `ss -lntp` e o `ps` mostrariam.
+// Voltamos para "node", que é o que se espera ver ao perguntar "qual processo está na porta 3000?".
+process.title = 'node';
+
 // Lê o .env (se existir) antes de qualquer outra coisa. Leitor próprio para funcionar em qualquer versão do Node.
 // Uma variável já preenchida no ambiente tem prioridade sobre o .env.
 function carregarEnv(arquivo) {

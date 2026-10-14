@@ -75,10 +75,11 @@ chown -R xadrez:xadrez "$DESTINO"
 chmod -R g+rwX "$DESTINO"
 find "$DESTINO" -type d -exec chmod g+s {} + # arquivos novos herdam o grupo xadrez
 chmod 640 "$DESTINO/.env"                    # o token da IA não fica visível para outros usuários
-if [ -d "$DESTINO/.git" ]; then
-  git -C "$DESTINO" config core.sharedRepository group # o git pull de um integrante não trava o do outro
-fi
+# O repositório pertence ao usuário xadrez; sem isto o Git recusa comandos de outros usuários ("dubious ownership")
 git config --system --get-all safe.directory | grep -qx "$DESTINO" || git config --system --add safe.directory "$DESTINO"
+if [ -d "$DESTINO/.git" ]; then
+  git -C "$DESTINO" config core.sharedRepository group || true # o git pull de um integrante não trava o do outro
+fi
 
 passo "Serviços systemd: xadrez (o jogo) e xadrez-tunel (o Cloudflare Tunnel)"
 cp "$DESTINO/deploy/xadrez.service" /etc/systemd/system/xadrez.service
