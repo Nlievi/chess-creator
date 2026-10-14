@@ -8,10 +8,10 @@ Trabalho bimestral de **Infraestrutura de Servidores** (Prof. Lucca Abbado Neres
 
 | Nome | Função |
 |---|---|
-| Nicoli Lievi Ackermann Coelho | Infraestrutura (servidor, SSH, túnel, systemd) |
-| Guilherme Pereira | Jogo + animações |
-| Isabella Bonet | Online + bot |
-| João Dal Molin | IA + personalização |
+| Nicoli Lievi Ackermann Coelho | 
+| Guilherme Pereira |
+| Isabella Bonet | 
+| João Dal Molin | 
 
 ## 2. O serviço
 
