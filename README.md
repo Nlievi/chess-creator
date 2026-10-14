@@ -8,10 +8,10 @@ Trabalho bimestral de **Infraestrutura de Servidores** (Prof. Lucca Abbado Neres
 
 | Nome | Função |
 |---|---|
-| _preencher_ | Infraestrutura (servidor, SSH, túnel, systemd) |
-| _preencher_ | Jogo + animações |
-| _preencher_ | Online + bot |
-| _preencher_ | IA + personalização |
+| Nicoli Lievi Ackermann Coelho | Infraestrutura (servidor, SSH, túnel, systemd) |
+| Guilherme Pereira | Jogo + animações |
+| Isabella Bonet | Online + bot |
+| João Dal Molin | IA + personalização |
 
 ## 2. O serviço
 
@@ -335,7 +335,7 @@ cloudflared tunnel --no-autoupdate --url http://localhost:3000
 **10. URL `trycloudflare.com`** (saída de `bash /opt/xadrez-ia/deploy/tunel.sh`; ela muda sempre que o túnel reinicia):
 
 ```
-https://picks-stockings-minimum-jam.trycloudflare.com
+https://capacity-muslim-cotton-balance.trycloudflare.com
 ```
 
 Log do túnel: `Registered tunnel connection connIndex=0 ... location=gru02 protocol=quic` (conectado ao Cloudflare de São Paulo).
@@ -349,5 +349,7 @@ Log do túnel: `Registered tunnel connection connIndex=0 ... location=gru02 prot
 **12. Um problema encontrado e como foi diagnosticado:**
 
 Depois da instalação, minutos após fecharmos o terminal do Ubuntu, a URL pública passou a responder **HTTP 530 (Error 1033)** do Cloudflare: o Cloudflare não encontrava mais o túnel. Seguimos a ordem de diagnóstico começando pelo primeiro passo, "o processo existe?": no Windows, `wsl -l -v` mostrou o Ubuntu como **Stopped**. Ou seja, a máquina Linux inteira estava desligada: sem o processo do jogo, sem a porta 3000 e sem o cloudflared. Causa: o WSL desliga a máquina virtual quando nenhum programa `wsl.exe` está aberto, mesmo com serviços do systemd ativos. Solução: o `ligar-servidor-wsl.bat` mantém um `wsl.exe` escondido rodando `sleep infinity`; com ele, `wsl -l -v` passou a mostrar **Running** e a URL voltou a responder 200.
+
+O mesmo sintoma voltou em 14/10, mesmo com o `sleep infinity` rodando: a URL parou de existir (o nome nem resolvia mais). `wsl -l -v` mostrou **Stopped** de novo; `last -x shutdown` no Ubuntu mostrou que ele desligou às 09:37; e `uname -r` mostrou um kernel diferente do da manhã (`6.18.40.1` → `6.18.54.1`). Causa: a Microsoft Store atualizou o WSL sozinha, e a atualização desliga todas as máquinas Linux. Solução: rodar o `ligar-servidor-wsl.bat` de novo (os serviços sobem sozinhos pelo systemd; a URL do túnel muda) e desligar as atualizações automáticas da Store até a apresentação.
 
 **13. Repositório:** https://github.com/Nlievi/chess-creator
