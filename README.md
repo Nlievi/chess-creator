@@ -265,6 +265,30 @@ Isso é feito de outro aparelho com o Tailscale ligado na mesma conta do servido
 
 Exemplos: trocar `"mensagemBoasVindas"`, trocar `"r": "esmagar"` por `"r": "desintegrar"` (a torre passa a desintegrar), ou colar times novos em `"timesPadrao"`. Depois basta dar F5 no celular: o `config.json` é lido a cada acesso. Mudanças no `.env` ou em arquivos `.js` do servidor precisam de `sudo systemctl restart xadrez`.
 
+### Teste feito em 14/10/2026 (itens 3.3 e 3.6)
+
+Um celular Android com o Tailscale (mesma conta do servidor, IP `100.98.152.14`) e o app Termius entrou no servidor por SSH em `lievi@100.113.61.105`, porta 22. Na primeira conexão o Termius mostrou a impressão digital da chave do servidor, `SHA256:H33FUdKiIMele2UOSeHcwDrigNSjblN/l7wlxQzgiiA`, igual à do servidor (`ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub`).
+
+Log do servidor (`sudo journalctl -u ssh`):
+
+```
+10:12:32 sshd[913]: Accepted password for lievi from 100.98.152.14 port 34890 ssh2
+```
+
+Pelo mesmo SSH, o `config.json` foi editado no `nano` e salvo às 10:22:27. Sem reiniciar nada, a URL pública passou a entregar a mensagem nova:
+
+```
+$ curl https://capacity-muslim-cotton-balance.trycloudflare.com/api/config
+{"titulo":"CHESS CREATOR","mensagemBoasVindas":"alterado por ssh pelo celular", ...}
+```
+
+<p>
+<img src="docs/evidencias/ssh-celular.jpg" alt="Termius no celular conectado por SSH em lievi@xadrez-server" width="260">
+<img src="docs/evidencias/ssh-nano-config.jpg" alt="nano editando /opt/xadrez-ia/config.json pelo SSH no celular" width="260">
+</p>
+
+Depois do teste, o `config.json` original foi restaurado.
+
 ## Diagnóstico de problemas (item 3.7)
 
 A ordem de raciocínio é sempre: **o processo existe? → a porta está em escuta? → responde localmente? → só então o acesso externo.**
