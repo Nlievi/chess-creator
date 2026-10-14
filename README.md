@@ -159,7 +159,9 @@ tar -czf "$env:USERPROFILE\Desktop\xadrez-ia.tar.gz" --exclude=node_modules --ex
 scp "$env:USERPROFILE\Desktop\xadrez-ia.tar.gz" usuario@192.168.0.50:~/
 ```
 
-(ou copiar por pendrive, ou `git clone` do repositório). O pacote inclui o `.env` com o token da IA: não compartilhe esse arquivo.
+(ou copiar por pendrive). O pacote inclui o `.env` com o token da IA: não compartilhe esse arquivo.
+
+Outra opção é baixar do GitHub: `git clone https://github.com/Nlievi/chess-creator.git xadrez-ia`. O repositório não tem o `.env` (o token nunca vai para o Git); sem ele o jogo funciona, só o modo "Foto de pessoa" fica desligado até alguém criar o `.env` no servidor.
 
 **Passo 2. Dar nome à máquina e rodar o instalador.** No servidor:
 
@@ -348,4 +350,4 @@ Log do túnel: `Registered tunnel connection connIndex=0 ... location=gru02 prot
 
 Depois da instalação, minutos após fecharmos o terminal do Ubuntu, a URL pública passou a responder **HTTP 530 (Error 1033)** do Cloudflare: o Cloudflare não encontrava mais o túnel. Seguimos a ordem de diagnóstico começando pelo primeiro passo, "o processo existe?": no Windows, `wsl -l -v` mostrou o Ubuntu como **Stopped**. Ou seja, a máquina Linux inteira estava desligada: sem o processo do jogo, sem a porta 3000 e sem o cloudflared. Causa: o WSL desliga a máquina virtual quando nenhum programa `wsl.exe` está aberto, mesmo com serviços do systemd ativos. Solução: o `ligar-servidor-wsl.bat` mantém um `wsl.exe` escondido rodando `sleep infinity`; com ele, `wsl -l -v` passou a mostrar **Running** e a URL voltou a responder 200.
 
-**13. Repositório:** _colar o link_
+**13. Repositório:** https://github.com/Nlievi/chess-creator
