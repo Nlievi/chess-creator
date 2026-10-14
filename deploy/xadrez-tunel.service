@@ -1,8 +1,8 @@
-# Cloudflare Quick Tunnel do Xadrez IA: publica http://localhost:3000 numa URL https://….trycloudflare.com
+# Cloudflare Quick Tunnel do CHESS CREATOR: publica http://localhost:3000 numa URL https://….trycloudflare.com
 # A URL muda a cada início. Para ver a atual: bash /opt/xadrez-ia/deploy/tunel.sh
 # Parar (incidente "cloudflared encerrado"): sudo systemctl stop xadrez-tunel
 [Unit]
-Description=Cloudflare Quick Tunnel do Xadrez IA
+Description=Cloudflare Quick Tunnel do CHESS CREATOR
 After=network-online.target xadrez.service
 Wants=network-online.target
 

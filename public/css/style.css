@@ -107,6 +107,7 @@ main { padding: 12px 16px 24px; }
 .niveis legend { float: left; margin-right: 6px; }
 .niveis label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .niveis input { accent-color: var(--destaque); }
+.niveis .rating { color: var(--suave); font-size: 0.8rem; }
 .descricao-modo { margin: 10px 0 0; color: var(--suave); font-size: 0.9rem; }
 .times-servidor { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 

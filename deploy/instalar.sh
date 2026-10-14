@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instala (ou atualiza) o Xadrez IA num Ubuntu Server 24.04.
+# Instala (ou atualiza) o CHESS CREATOR num Ubuntu Server 24.04.
 # Rode de dentro da pasta do projeto que foi copiada para o servidor:
 #   sudo bash deploy/instalar.sh
 # Pode rodar de novo quantas vezes quiser: é assim também que se atualiza o jogo.

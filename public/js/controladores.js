@@ -60,11 +60,17 @@ export class ControladorLocal {
 
 // ---------- Bot: Stockfish (versão "lite", uma thread) rodando num Web Worker, no navegador do jogador ----------
 
+// elo: a opção UCI_Elo do Stockfish limita a força dele para jogar como alguém daquele rating
+// (escala calibrada pelo próprio Stockfish, de 1320 a 3190). 0 = sem limite: força máxima.
 export const NIVEIS_BOT = {
-  facil: { nome: 'Fácil', habilidade: 1, tempo: 150 },
-  medio: { nome: 'Médio', habilidade: 8, tempo: 400 },
-  dificil: { nome: 'Difícil', habilidade: 20, tempo: 1000 },
+  facil: { nome: 'Fácil', elo: 1320, tempo: 150 },
+  medio: { nome: 'Médio', elo: 1800, tempo: 400 },
+  dificil: { nome: 'Difícil', elo: 0, tempo: 1000 },
 };
+
+export function ratingDoNivel(nivel) {
+  return nivel.elo ? String(nivel.elo) : '3190+';
+}
 
 let motor = null; // um Worker só, reaproveitado entre partidas
 
@@ -107,7 +113,10 @@ export class ControladorBot {
   async calcular(chess) {
     const m = iniciarMotor();
     await m.pronto;
-    m.worker.postMessage(`setoption name Skill Level value ${this.nivel.habilidade}`);
+    // O motor é reaproveitado entre partidas: sempre liga ou desliga o limite
+    const { elo } = this.nivel;
+    m.worker.postMessage(`setoption name UCI_LimitStrength value ${elo ? 'true' : 'false'}`);
+    if (elo) m.worker.postMessage(`setoption name UCI_Elo value ${elo}`);
     await m.pedir('isready', 'readyok');
     m.worker.postMessage(`position fen ${chess.fen()}`);
     const linha = await m.pedir(`go movetime ${this.nivel.tempo}`, 'bestmove');

@@ -1,8 +1,8 @@
-# Serviço systemd do Xadrez IA (instalado pelo deploy/instalar.sh).
+# Serviço systemd do CHESS CREATOR (instalado pelo deploy/instalar.sh).
 # Ver:        systemctl status xadrez   |   journalctl -u xadrez -f
 # Reiniciar:  sudo systemctl restart xadrez   (depois de mudar o .env ou arquivos .js do servidor)
 [Unit]
-Description=Xadrez IA - jogo de xadrez personalizado
+Description=CHESS CREATOR - jogo de xadrez personalizado
 After=network-online.target
 Wants=network-online.target
 

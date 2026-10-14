@@ -2,7 +2,7 @@
 
 import { Tabuleiro } from './tabuleiro.js';
 import { Partida } from './partida.js';
-import { ControladorLocal, ControladorBot, ControladorRemoto, NIVEIS_BOT } from './controladores.js';
+import { ControladorLocal, ControladorBot, ControladorRemoto, NIVEIS_BOT, ratingDoNivel } from './controladores.js';
 import { TEMAS, TIPOS, NOMES_PECAS, montarTime } from './pecas.js';
 import { sons, opcoesSom, destravarAudio } from './sons.js';
 import { configurarAnimacoes, pularAnimacoes, EFEITOS_PADRAO, EFEITOS } from './animacoes.js';
@@ -167,7 +167,7 @@ function abrirGuardarTimes() {
 
 const DESCRICOES_MODO = {
   local: 'Os dois jogadores se revezam neste aparelho.',
-  bot: 'Você joga de brancas (time das Brancas) contra o Stockfish, que usa o time das Pretas.',
+  bot: 'Você joga de brancas (time das Brancas) contra o Stockfish, que usa o time das Pretas. O rating de cada nível é o do próprio Stockfish (opção UCI_Elo); no Difícil ele joga sem limite.',
   online: 'Quem cria a sala joga de brancas com o time das Brancas; quem entra pelo link joga de pretas com o time das Pretas.',
 };
 
@@ -212,6 +212,7 @@ function prepararMenu() {
     });
   }
   for (const opcao of document.querySelectorAll('.niveis input')) {
+    $('.rating', opcao.parentElement).textContent = `rating ${ratingDoNivel(NIVEIS_BOT[opcao.value])}`;
     opcao.addEventListener('change', () => {
       estado.nivelBot = opcao.value;
       salvarPreferencias();
@@ -343,7 +344,7 @@ function iniciarPartida() {
   if (estado.modo === 'bot') {
     comecar({
       times: timesDoMenu(),
-      nomes: { w: estado.nomes.w, b: `Computador (${NIVEIS_BOT[estado.nivelBot].nome})` },
+      nomes: { w: estado.nomes.w, b: `Computador (${NIVEIS_BOT[estado.nivelBot].nome} · ${ratingDoNivel(NIVEIS_BOT[estado.nivelBot])})` },
       controladores: { w: local, b: new ControladorBot(estado.nivelBot) },
       minhaCor: 'w',
     });

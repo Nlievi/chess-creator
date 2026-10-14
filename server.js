@@ -1,4 +1,4 @@
-// Servidor do Xadrez IA: entrega o site, a configuração, a geração de peças por IA e as salas online.
+// Servidor do CHESS CREATOR: entrega o site, a configuração, a geração de peças por IA e as salas online.
 const path = require('node:path');
 
 // O Node novo chama a thread principal de "MainThread", e é esse nome que o `ss -lntp` e o `ps` mostrariam.
@@ -183,5 +183,5 @@ const servidor = http.createServer(app);
 registrarSalas(new Server(servidor));
 
 servidor.listen(PORT, HOST, () => {
-  console.log(`Xadrez IA rodando em http://${HOST}:${PORT} (IA: ${provedorAtual()}, .env: ${envCarregado ? 'carregado' : 'não encontrado'}, Node ${process.version})`);
+  console.log(`CHESS CREATOR rodando em http://${HOST}:${PORT} (IA: ${provedorAtual()}, .env: ${envCarregado ? 'carregado' : 'não encontrado'}, Node ${process.version})`);
 });

@@ -1,4 +1,4 @@
-# Xadrez IA
+# CHESS CREATOR
 
 Jogo de xadrez no navegador com três modos (mesmo PC, contra o computador e online), peças personalizadas com personagens ou com fotos transformadas por IA, e animações de captura (espada, esmagamento, coice, feitiço; no xeque-mate o rei explode).
 
@@ -17,7 +17,7 @@ Trabalho bimestral de **Infraestrutura de Servidores** (Prof. Lucca Abbado Neres
 
 - **Modos de jogo:**
   - **Mesmo PC:** dois jogadores se revezam no mesmo aparelho.
-  - **Contra o computador:** Stockfish 19 (versão "lite", uma thread) rodando no navegador, em 3 níveis.
+  - **Contra o computador:** Stockfish 19 (versão "lite", uma thread) rodando no navegador, em 3 níveis: **Fácil (rating 1320)**, **Médio (rating 1800)** e **Difícil (força máxima, acima de 3190)**. O rating é aplicado pela opção `UCI_Elo` do próprio Stockfish, calibrada por ele numa escala de 1320 a 3190 (escala de motores, ancorada na lista CCRL; não é o rating FIDE nem o do Chess.com).
   - **Online:** quem cria a sala recebe um código de 4 letras, um link e um QR code; o adversário entra de outro aparelho, em qualquer rede. O servidor confere cada jogada com o chess.js (ninguém consegue mandar jogada ilegal ou fora da vez).
 - **Temas:** Clássico, Ouro e Rubi, Neon, Gelo e Fogo, Madeira.
 - **Peças personalizadas** (botão "Colocar fotos nas peças"):

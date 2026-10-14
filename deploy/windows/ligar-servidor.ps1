@@ -1,4 +1,4 @@
-﻿# Liga o servidor do Xadrez IA que roda no Ubuntu do WSL e mostra a URL pública.
+﻿# Liga o servidor do CHESS CREATOR que roda no Ubuntu do WSL e mostra a URL pública.
 # O WSL desliga sozinho quando nenhum processo dele está aberto no Windows (os serviços do systemd não contam).
 # Por isso este script deixa um "sleep infinity" do WSL rodando escondido: enquanto ele existir, o servidor fica no ar.
 $distro = 'Ubuntu-24.04'
